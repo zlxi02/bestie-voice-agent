@@ -6,7 +6,8 @@ import tempfile
 import os
 import httpx
 from piper import PiperVoice
-import wave
+import io
+import struct
 
 # Create FastAPI app instance
 app = FastAPI(title="Bestie Voice Agent API")
@@ -44,13 +45,44 @@ def generate_tts(text: str, output_path: str):
     """
     Generate speech from text using Piper TTS (fully local).
     """
-    # Generate raw audio data
-    with wave.open(output_path, 'wb') as wav_file:
-        wav_file.setparams((1, 2, 22050, 0, 'NONE', 'NONE'))
+    # Collect audio samples in memory
+    audio_bytes = io.BytesIO()
+    
+    # Synthesize (outputs raw PCM audio)
+    piper_voice.synthesize(text, audio_bytes)
+    
+    # Get the PCM data
+    pcm_data = audio_bytes.getvalue()
+    
+    # Write proper WAV file with headers
+    with open(output_path, 'wb') as wav_file:
+        # WAV file header
+        sample_rate = 22050
+        num_channels = 1
+        bits_per_sample = 16
+        byte_rate = sample_rate * num_channels * bits_per_sample // 8
+        block_align = num_channels * bits_per_sample // 8
+        data_size = len(pcm_data)
         
-        # Synthesize and write audio
-        for audio_chunk in piper_voice.synthesize_stream_raw(text):
-            wav_file.writeframes(audio_chunk)
+        # RIFF header
+        wav_file.write(b'RIFF')
+        wav_file.write(struct.pack('<I', 36 + data_size))
+        wav_file.write(b'WAVE')
+        
+        # fmt chunk
+        wav_file.write(b'fmt ')
+        wav_file.write(struct.pack('<I', 16))  # Chunk size
+        wav_file.write(struct.pack('<H', 1))   # Audio format (PCM)
+        wav_file.write(struct.pack('<H', num_channels))
+        wav_file.write(struct.pack('<I', sample_rate))
+        wav_file.write(struct.pack('<I', byte_rate))
+        wav_file.write(struct.pack('<H', block_align))
+        wav_file.write(struct.pack('<H', bits_per_sample))
+        
+        # data chunk
+        wav_file.write(b'data')
+        wav_file.write(struct.pack('<I', data_size))
+        wav_file.write(pcm_data)
 
 # Function to call Ollama LLM
 async def get_llm_response(user_text: str) -> str:

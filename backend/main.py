@@ -5,31 +5,32 @@ import whisper
 import tempfile
 import os
 import httpx
-from piper import PiperVoice
-import io
-import struct
+import subprocess
+import json
 
 # Create FastAPI app instance
 app = FastAPI(title="Bestie Voice Agent API")
 
 # Global variables to store models
 whisper_model = None
-piper_voice = None
+piper_model_path = None
 
 # Load models on startup
 @app.on_event("startup")
 async def load_models():
-    global whisper_model, piper_voice
+    global whisper_model, piper_model_path
     
     print("Loading Whisper model...")
     whisper_model = whisper.load_model("base")
     print("Whisper model loaded successfully!")
     
-    print("Loading Piper TTS voice...")
-    # Load voice model from local file
-    voice_path = os.path.join(os.path.dirname(__file__), "voices", "en_US-amy-medium.onnx")
-    piper_voice = PiperVoice.load(voice_path)
-    print("Piper TTS voice loaded successfully!")
+    print("Setting up Piper TTS...")
+    # Store path to voice model
+    piper_model_path = os.path.join(os.path.dirname(__file__), "voices", "en_US-amy-medium.onnx")
+    if os.path.exists(piper_model_path):
+        print(f"Piper TTS voice model found: {piper_model_path}")
+    else:
+        print(f"Warning: Piper model not found at {piper_model_path}")
 
 # Configure CORS to allow frontend to communicate with backend
 app.add_middleware(
@@ -43,46 +44,25 @@ app.add_middleware(
 # Function to generate TTS audio
 def generate_tts(text: str, output_path: str):
     """
-    Generate speech from text using Piper TTS (fully local).
+    Generate speech from text using Piper TTS command line (fully local).
     """
-    # Collect audio samples in memory
-    audio_bytes = io.BytesIO()
+    # Use piper command line tool
+    # Echo text and pipe it to piper
+    cmd = f'echo "{text}" | piper --model {piper_model_path} --output_file {output_path}'
     
-    # Synthesize (outputs raw PCM audio)
-    piper_voice.synthesize(text, audio_bytes)
-    
-    # Get the PCM data
-    pcm_data = audio_bytes.getvalue()
-    
-    # Write proper WAV file with headers
-    with open(output_path, 'wb') as wav_file:
-        # WAV file header
-        sample_rate = 22050
-        num_channels = 1
-        bits_per_sample = 16
-        byte_rate = sample_rate * num_channels * bits_per_sample // 8
-        block_align = num_channels * bits_per_sample // 8
-        data_size = len(pcm_data)
-        
-        # RIFF header
-        wav_file.write(b'RIFF')
-        wav_file.write(struct.pack('<I', 36 + data_size))
-        wav_file.write(b'WAVE')
-        
-        # fmt chunk
-        wav_file.write(b'fmt ')
-        wav_file.write(struct.pack('<I', 16))  # Chunk size
-        wav_file.write(struct.pack('<H', 1))   # Audio format (PCM)
-        wav_file.write(struct.pack('<H', num_channels))
-        wav_file.write(struct.pack('<I', sample_rate))
-        wav_file.write(struct.pack('<I', byte_rate))
-        wav_file.write(struct.pack('<H', block_align))
-        wav_file.write(struct.pack('<H', bits_per_sample))
-        
-        # data chunk
-        wav_file.write(b'data')
-        wav_file.write(struct.pack('<I', data_size))
-        wav_file.write(pcm_data)
+    try:
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        print(f"Piper TTS generated audio successfully")
+        print(f"Output file size: {os.path.getsize(output_path)} bytes")
+    except subprocess.CalledProcessError as e:
+        print(f"Piper command failed: {e.stderr}")
+        raise
 
 # Function to call Ollama LLM
 async def get_llm_response(user_text: str) -> str:
@@ -91,9 +71,18 @@ async def get_llm_response(user_text: str) -> str:
     """
     ollama_url = "http://localhost:11434/api/generate"
     
+    # Create a conversational prompt
+    system_prompt = """You are a helpful, friendly voice assistant. Keep your responses:
+- Concise and to the point (2-3 sentences max)
+- Conversational and natural, like talking to a friend
+- Avoid long lists or overly detailed explanations
+- Speak in a warm, engaging tone"""
+    
+    full_prompt = f"{system_prompt}\n\nUser: {user_text}\nAssistant:"
+    
     payload = {
         "model": "llama3.2:3b",
-        "prompt": user_text,
+        "prompt": full_prompt,
         "stream": False
     }
     

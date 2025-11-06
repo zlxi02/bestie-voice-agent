@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+backend/venv/
+backend/env/
+
+# Environment variables
+.env
+.env.local
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Models (large files we'll download locally)
+*.pth
+*.bin
+*.gguf
+models/
+
+# Audio files (temporary/test files)
+*.wav
+*.mp3
+*.webm
+*.ogg
+temp_audio/
+recordings/
+
+# Logs
+*.log
+logs/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+

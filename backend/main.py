@@ -5,22 +5,30 @@ import whisper
 import tempfile
 import os
 import httpx
-import edge_tts
-import asyncio
+from piper import PiperVoice
+import wave
 
 # Create FastAPI app instance
 app = FastAPI(title="Bestie Voice Agent API")
 
-# Global variable to store Whisper model
+# Global variables to store models
 whisper_model = None
+piper_voice = None
 
-# Load Whisper model on startup
+# Load models on startup
 @app.on_event("startup")
 async def load_models():
-    global whisper_model
+    global whisper_model, piper_voice
+    
     print("Loading Whisper model...")
     whisper_model = whisper.load_model("base")
     print("Whisper model loaded successfully!")
+    
+    print("Loading Piper TTS voice...")
+    # Load voice model from local file
+    voice_path = os.path.join(os.path.dirname(__file__), "voices", "en_US-amy-medium.onnx")
+    piper_voice = PiperVoice.load(voice_path)
+    print("Piper TTS voice loaded successfully!")
 
 # Configure CORS to allow frontend to communicate with backend
 app.add_middleware(
@@ -32,13 +40,17 @@ app.add_middleware(
 )
 
 # Function to generate TTS audio
-async def generate_tts(text: str, output_path: str):
+def generate_tts(text: str, output_path: str):
     """
-    Generate speech from text using edge-tts.
+    Generate speech from text using Piper TTS (fully local).
     """
-    voice = "en-US-AriaNeural"  # Female voice, can change to "en-US-GuyNeural" for male
-    communicate = edge_tts.Communicate(text, voice)
-    await communicate.save(output_path)
+    # Generate raw audio data
+    with wave.open(output_path, 'wb') as wav_file:
+        wav_file.setparams((1, 2, 22050, 0, 'NONE', 'NONE'))
+        
+        # Synthesize and write audio
+        for audio_chunk in piper_voice.synthesize_stream_raw(text):
+            wav_file.writeframes(audio_chunk)
 
 # Function to call Ollama LLM
 async def get_llm_response(user_text: str) -> str:
@@ -112,13 +124,13 @@ async def transcribe_audio(file: UploadFile = File(...)):
         llm_response = await get_llm_response(transcription)
         print(f"LLM Response: {llm_response}")
         
-        # Generate TTS audio (optional - fails gracefully if no internet)
+        # Generate TTS audio (fully local with Piper)
         audio_url = None
         try:
-            print("Generating TTS audio...")
-            tts_filename = f"tts_{tempfile.mkstemp()[1].split('/')[-1]}.mp3"
+            print("Generating TTS audio with Piper...")
+            tts_filename = f"tts_{tempfile.mkstemp()[1].split('/')[-1]}.wav"
             tts_path = os.path.join(tempfile.gettempdir(), tts_filename)
-            await generate_tts(llm_response, tts_path)
+            generate_tts(llm_response, tts_path)
             audio_url = f"/audio/{tts_filename}"
             print(f"TTS audio saved to: {tts_path}")
         except Exception as tts_error:
@@ -145,12 +157,12 @@ async def transcribe_audio(file: UploadFile = File(...)):
 @app.get("/audio/{filename}")
 async def get_audio(filename: str):
     """
-    Serve generated TTS audio files.
+    Serve generated TTS audio files (WAV format from Piper).
     """
     audio_path = os.path.join(tempfile.gettempdir(), filename)
     
     if os.path.exists(audio_path):
-        return FileResponse(audio_path, media_type="audio/mpeg", filename=filename)
+        return FileResponse(audio_path, media_type="audio/wav", filename=filename)
     else:
         return {"error": "Audio file not found"}
 

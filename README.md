@@ -19,10 +19,7 @@ Voice agent implementing a complete conversational AI pipeline: audio capture �
 - 🎤 **Real-time audio visualization** - Waves pulse with your voice volume
 - 🔒 **100% local processing** - No cloud APIs, no data leaves your machine
 - 🚀 **Fast response times** - 4-15 seconds total latency
-- 🎨 **Modern React UI** - Smooth animations and clean interface
 - 🔧 **Fully customizable** - Adjust speech speed, voice model, and LLM behavior
-- 💬 **Natural conversations** - Concise, conversational AI responses
-- 🛡️ **Security-first** - Command injection protection, input validation, file size limits
 
 ## 🏗️ Voice Architecture
 
@@ -84,7 +81,6 @@ Total latency: 4-15 seconds
 - **Whisper**: Industry-leading accuracy, works offline
 - **Ollama**: Easiest way to run local LLMs, simple API
 - **Piper**: Best quality open-source TTS, neural voices
-- **FastAPI**: Fast async Python framework, clean API design
 
 ## 🛠️ Tech Stack
 

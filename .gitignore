@@ -31,7 +31,9 @@ backend/env/
 *.pth
 *.bin
 *.gguf
+*.onnx
 models/
+backend/voices/
 
 # Audio files (temporary/test files)
 *.wav
@@ -49,4 +51,15 @@ logs/
 dist/
 build/
 *.egg-info/
+
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/build/
+.vite/
+*.local
+
+# Python virtual environments
+backend/bestie-agent/
 

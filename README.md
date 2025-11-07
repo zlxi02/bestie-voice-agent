@@ -1,6 +1,6 @@
-# Bestie Voice Agent 🎤
+# Bestie Voice Agent 
 
-A fully local voice assistant. Record your voice, get an AI response, and hear it speak back. Everything runs on your machine.
+A fully local voice assistant. 
 
 ![](https://img.shields.io/badge/Privacy-100%25%20Local-green)
 ![](https://img.shields.io/badge/Python-3.9+-blue)
@@ -18,35 +18,52 @@ Talk to an AI assistant using your voice. The app transcribes your speech, proce
 Your Voice → STT → LLM → TTS → AI Voice Response
 ```
 
-### Detailed Flow
+### Architecture Diagram
 
-**1. Audio Capture (Frontend)**
-- Browser's MediaRecorder API captures microphone input
-- Web Audio API analyzes frequency data for real-time visualization
-- Audio encoded as WebM and sent to backend
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                          FRONTEND (React)                        │
+│                                                                   │
+│  ┌──────────────┐         ┌──────────────┐                      │
+│  │   Mic Icon   │────────▶│  Web Audio   │                      │
+│  │  (Click Me)  │         │ Visualization│                      │
+│  └──────────────┘         └──────────────┘                      │
+│         │                                                         │
+│         │ Record voice (WebM)                                    │
+│         ▼                                                         │
+└─────────┼─────────────────────────────────────────────────────┘
+          │
+          │ HTTP POST /api/transcribe
+          ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       BACKEND (FastAPI)                          │
+│                                                                   │
+│  ┌──────────────┐       ┌──────────────┐       ┌─────────────┐ │
+│  │   Whisper    │──────▶│    Ollama    │──────▶│  Piper TTS  │ │
+│  │  (base 140MB)│       │(llama3.2 3B) │       │(amy 60MB)   │ │
+│  │              │       │              │       │             │ │
+│  │ Audio → Text │       │ Text → Reply │       │ Text → WAV  │ │
+│  │   1-3 sec    │       │   2-10 sec   │       │   1-2 sec   │ │
+│  └──────────────┘       └──────────────┘       └─────────────┘ │
+│                                                                   │
+└─────────────────────────────────────┬───────────────────────────┘
+                                      │
+                                      │ JSON + audio_url
+                                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                          FRONTEND (React)                        │
+│                                                                   │
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │  Conversation Display: "User: ..." / "Bestie: ..."      │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│  ┌──────────────┐                                               │
+│  │ Audio Player │ ──▶ 🔊 Voice plays automatically              │
+│  └──────────────┘                                               │
+│                                                                   │
+└─────────────────────────────────────────────────────────────────┘
 
-**2. Speech-to-Text (Backend - Whisper)**
-- OpenAI's Whisper model transcribes audio to text
-- Model: `base` (140MB) - good balance of speed and accuracy
-- Processing: 1-3 seconds on modern CPU
-- Output: Transcribed text string
-
-**3. Language Model (Backend - Ollama)**
-- Llama 3.2 (3B parameters) processes transcription
-- System prompt ensures concise, conversational responses
-- Processing: 2-10 seconds depending on response length
-- Output: Text response
-
-**4. Text-to-Speech (Backend - Piper)**
-- Piper neural TTS synthesizes response to audio
-- Voice: `en_US-amy-medium` (60MB model)
-- Speed: 0.85x (15% faster than default)
-- Processing: 1-2 seconds
-- Output: WAV file
-
-**5. Audio Playback (Frontend)**
-- Browser auto-plays synthesized audio
-- Hidden audio element handles playback
+Total latency: 4-15 seconds
+```
 
 ### Why This Stack?
 

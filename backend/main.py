@@ -33,9 +33,11 @@ async def load_models():
         print(f"Warning: Piper model not found at {piper_model_path}")
 
 # Configure CORS to allow frontend to communicate with backend
+# WARNING: allow_origins=["*"] is insecure for production!
+# For production, replace with specific origins: allow_origins=["https://yourdomain.com"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for local development
+    allow_origins=["*"],  # Allow all origins - ONLY for local development
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
@@ -46,18 +48,24 @@ def generate_tts(text: str, output_path: str):
     """
     Generate speech from text using Piper TTS command line (fully local).
     """
-    # Use piper command line tool
-    # Echo text and pipe it to piper
-    cmd = f'echo "{text}" | piper --model {piper_model_path} --output_file {output_path}'
+    # Use piper command line tool with proper argument passing to prevent injection
+    # length_scale < 1.0 = faster, > 1.0 = slower (default is 1.0)
+    speed = 0.85  # 15% faster - adjust between 0.5 (very fast) to 1.5 (slow)
     
     try:
-        result = subprocess.run(
-            cmd,
-            shell=True,
-            check=True,
-            capture_output=True,
+        # Use subprocess with list args instead of shell=True to prevent command injection
+        process = subprocess.Popen(
+            ['piper', '--model', piper_model_path, '--length_scale', str(speed), '--output_file', output_path],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
             text=True
         )
+        stdout, stderr = process.communicate(input=text)
+        
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, 'piper', stderr)
+            
         print(f"Piper TTS generated audio successfully")
         print(f"Output file size: {os.path.getsize(output_path)} bytes")
     except subprocess.CalledProcessError as e:
@@ -122,8 +130,15 @@ async def transcribe_audio(file: UploadFile = File(...)):
         }
     
     try:
-        # Read audio data
+        # Read audio data with size limit (10MB max to prevent DoS)
+        MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
         audio_data = await file.read()
+        
+        if len(audio_data) > MAX_FILE_SIZE:
+            return {
+                "error": f"File too large. Maximum size is {MAX_FILE_SIZE / 1024 / 1024}MB",
+                "received": False
+            }
         
         # Create a temporary file to save the audio
         with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio:
@@ -180,7 +195,17 @@ async def get_audio(filename: str):
     """
     Serve generated TTS audio files (WAV format from Piper).
     """
+    # Prevent path traversal attacks - only allow alphanumeric, underscore, hyphen, and .wav extension
+    import re
+    if not re.match(r'^tts_[\w-]+\.wav$', filename):
+        return {"error": "Invalid filename"}
+    
+    # Construct safe path
     audio_path = os.path.join(tempfile.gettempdir(), filename)
+    
+    # Ensure the resolved path is still in temp directory (defense in depth)
+    if not os.path.abspath(audio_path).startswith(tempfile.gettempdir()):
+        return {"error": "Invalid file path"}
     
     if os.path.exists(audio_path):
         return FileResponse(audio_path, media_type="audio/wav", filename=filename)

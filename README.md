@@ -6,6 +6,10 @@ Local speech-to-text, LLM, and text-to-speech pipeline.
 ![](https://img.shields.io/badge/Python-3.9+-blue)
 ![](https://img.shields.io/badge/License-MIT-yellow)
 
+## Demo
+
+[Demo →](https://www.linkedin.com/posts/zacharyxi_todays-project-a-fully-local-hosted-voice-activity-7392359025348292608-Xgy-)
+
 ## What It Does
 
 Voice agent implementing a complete conversational AI pipeline: audio capture → Whisper STT → Llama 3.2 LLM → Piper TTS → audio output. Runs entirely on local hardware with no external API calls or network dependencies after initial setup.

@@ -80,8 +80,8 @@ async def get_llm_response(user_text: str) -> str:
     ollama_url = "http://localhost:11434/api/generate"
     
     # Create a conversational prompt
-    system_prompt = """You are a helpful, friendly voice assistant. Keep your responses:
-- Concise and to the point (2-3 sentences max)
+    system_prompt = """You are Bestie, a helpful, friendly voice assistant. Keep your responses:
+- Concise and to the point (1-2 sentences max)
 - Conversational and natural, like talking to a friend
 - Avoid long lists or overly detailed explanations
 - Speak in a warm, engaging tone"""

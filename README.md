@@ -6,15 +6,25 @@ Local speech-to-text, LLM, and text-to-speech pipeline.
 ![](https://img.shields.io/badge/Python-3.9+-blue)
 ![](https://img.shields.io/badge/License-MIT-yellow)
 
-## Demo
+## 🎥 Demo
 
 [Watch the demo here →](https://www.linkedin.com/posts/zacharyxi_todays-project-a-fully-local-hosted-voice-activity-7392359025348292608-Xgy-)
 
-## What It Does
+## 💡 What It Does
 
 Voice agent implementing a complete conversational AI pipeline: audio capture → Whisper STT → Llama 3.2 LLM → Piper TTS → audio output. Runs entirely on local hardware with no external API calls or network dependencies after initial setup.
 
-## Voice Architecture
+## ✨ Features
+
+- 🎤 **Real-time audio visualization** - Waves pulse with your voice volume
+- 🔒 **100% local processing** - No cloud APIs, no data leaves your machine
+- 🚀 **Fast response times** - 4-15 seconds total latency
+- 🎨 **Modern React UI** - Smooth animations and clean interface
+- 🔧 **Fully customizable** - Adjust speech speed, voice model, and LLM behavior
+- 💬 **Natural conversations** - Concise, conversational AI responses
+- 🛡️ **Security-first** - Command injection protection, input validation, file size limits
+
+## 🏗️ Voice Architecture
 
 ### Pipeline Overview
 
@@ -76,7 +86,7 @@ Total latency: 4-15 seconds
 - **Piper**: Best quality open-source TTS, neural voices
 - **FastAPI**: Fast async Python framework, clean API design
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 **Frontend:**
 - React + Vite
@@ -89,7 +99,7 @@ Total latency: 4-15 seconds
 - Ollama (LLM)
 - Piper TTS (Text-to-Speech)
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -154,7 +164,7 @@ ollama serve
 
 Open `http://localhost:5173` and start talking.
 
-## How to Use
+## 📖 How to Use
 
 1. Click the microphone button
 2. Speak your question (button turns green, waves pulse with your voice)
@@ -162,7 +172,7 @@ Open `http://localhost:5173` and start talking.
 4. Wait 5-15 seconds for processing
 5. Hear the AI response
 
-## Security
+## 🔒 Security
 
 **Built for local use.** All processing happens on your machine. No data leaves your computer.
 
@@ -174,7 +184,7 @@ Open `http://localhost:5173` and start talking.
 
 **For public deployment:** See `SECURITY.md` for production hardening checklist (CORS, auth, rate limiting, HTTPS).
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 bestie-voice-agent/
@@ -192,7 +202,7 @@ bestie-voice-agent/
 └── README.md
 ```
 
-## Configuration
+## ⚙️ Configuration
 
 **Speech speed:** Edit `speed = 0.85` in `backend/main.py` line 51 (0.5 = fast, 1.5 = slow)
 
@@ -200,7 +210,7 @@ bestie-voice-agent/
 
 **LLM behavior:** Edit system prompt in `backend/main.py` lines 75-79
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 **"Piper command not found"** - Run `which piper` to verify installation
 
@@ -210,7 +220,7 @@ bestie-voice-agent/
 
 **No audio plays** - Check browser console. Some browsers block autoplay—click the page first.
 
-## Performance
+## ⚡ Performance
 
 Expected latency on modern CPU:
 - Whisper transcription: 1-3s
@@ -220,11 +230,11 @@ Expected latency on modern CPU:
 
 With GPU acceleration (NVIDIA): 2-5 seconds total.
 
-## Credits
+## 🙏 Credits
 
 Built with [Whisper](https://github.com/openai/whisper), [Ollama](https://ollama.com/), [Piper TTS](https://github.com/rhasspy/piper), [FastAPI](https://fastapi.tiangolo.com/), and [React](https://react.dev/).
 
-## License
+## 📄 License
 
 MIT - Use for any purpose, personal or commercial.
 

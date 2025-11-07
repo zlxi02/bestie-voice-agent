@@ -8,7 +8,7 @@ Local speech-to-text, LLM, and text-to-speech pipeline.
 
 ## Demo
 
-[Demo →](https://www.linkedin.com/posts/zacharyxi_todays-project-a-fully-local-hosted-voice-activity-7392359025348292608-Xgy-)
+[Watch the demo here →](https://www.linkedin.com/posts/zacharyxi_todays-project-a-fully-local-hosted-voice-activity-7392359025348292608-Xgy-)
 
 ## What It Does
 
